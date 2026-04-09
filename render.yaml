@@ -6,7 +6,7 @@ services:
     plan: free
     rootDir: .
     buildCommand: pnpm install && cd apps/api && npx prisma generate
-    startCommand: cd apps/api && npx prisma migrate deploy && pnpm start
+    startCommand: cd apps/api && npx prisma migrate deploy && npx tsx src/server.ts
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,19 +18,3 @@ services:
         sync: false
       - key: FRONTEND_URL
         value: https://vuln-scanner-web.vercel.app
-
-  - type: worker
-    name: vuln-scanner-worker
-    runtime: node
-    region: oregon
-    plan: free
-    rootDir: .
-    buildCommand: pnpm install && cd apps/api && npx prisma generate
-    startCommand: cd apps/api && pnpm start:worker
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false

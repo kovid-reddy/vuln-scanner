@@ -2,6 +2,7 @@ import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { scanRoutes } from './routes/scan.routes'
+import './queue/scan.worker'   // start BullMQ worker in the same process
 
 const app = Fastify({ logger: { level: 'info' } })
 
