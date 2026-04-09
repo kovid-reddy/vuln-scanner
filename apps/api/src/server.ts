@@ -7,7 +7,16 @@ import './queue/scan.worker'   // start BullMQ worker in the same process
 const app = Fastify({ logger: { level: 'info' } })
 
 app.register(cors, {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true)
+    // Allow any localhost port (development)
+    if (origin.includes('localhost')) return callback(null, true)
+    // Allow all Vercel deployments (preview + production)
+    if (origin.includes('vercel.app')) return callback(null, true)
+    return callback(new Error('Not allowed by CORS'), false)
+  },
+  credentials: true,
 })
 
 app.register(scanRoutes, { prefix: '/api' })
