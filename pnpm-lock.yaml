@@ -57,6 +57,9 @@ importers:
 
   apps/scanner:
     dependencies:
+      '@vuln-scanner/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       axios:
         specifier: ^1.7.0
         version: 1.14.0
