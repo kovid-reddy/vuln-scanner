@@ -2,14 +2,15 @@
   "name": "api",
   "version": "1.0.0",
   "scripts": {
-    "dev":        "tsx watch src/server.ts",
-    "worker":     "tsx watch src/queue/scan.worker.ts",
-    "start":      "node --loader tsx/esm src/server.ts",
-    "start:worker": "node --loader tsx/esm src/queue/scan.worker.ts",
-    "build":      "tsc",
-    "db:migrate": "prisma migrate dev",
-    "db:deploy":  "prisma migrate deploy",
-    "db:generate": "prisma generate"
+    "postinstall":   "prisma generate",
+    "dev":           "tsx watch src/server.ts",
+    "worker":        "tsx watch src/queue/scan.worker.ts",
+    "start":         "node --loader tsx/esm src/server.ts",
+    "start:worker":  "node --loader tsx/esm src/queue/scan.worker.ts",
+    "build":         "tsc",
+    "db:migrate":    "prisma migrate dev",
+    "db:deploy":     "prisma migrate deploy",
+    "db:generate":   "prisma generate"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.0",
