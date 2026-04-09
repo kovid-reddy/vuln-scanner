@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+RUN npm install -g pnpm
+
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY apps/api/package.json ./apps/api/
+COPY apps/scanner/package.json ./apps/scanner/
+
+RUN pnpm install --frozen-lockfile
+
+COPY packages/shared-types ./packages/shared-types
+COPY apps/api ./apps/api
+COPY apps/scanner ./apps/scanner
+
+RUN cd apps/api && npx prisma generate
+
+WORKDIR /app/apps/api
+
+CMD ["node", "--loader", "tsx/esm", "src/queue/scan.worker.ts"]
