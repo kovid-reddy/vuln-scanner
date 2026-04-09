@@ -47,7 +47,7 @@ export async function forcedBrowsingCheck(url: string): Promise<Finding[]> {
     const batch = SENSITIVE_PATHS.slice(i, i + BATCH)
 
     await Promise.allSettled(
-      batch.map(async (path) => {
+      batch.map(async (path: string) => {
         try {
           const res = await http.get(`${base}${path}`, { timeout: 6000 })
 

@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "axios": "^1.7.0",
+    "@vuln-scanner/shared-types": "workspace:*",
     "cheerio": "^1.2.0"
   },
   "devDependencies": {

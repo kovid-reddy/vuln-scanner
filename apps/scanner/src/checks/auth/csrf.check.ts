@@ -45,16 +45,16 @@ export async function csrfCheck(url: string): Promise<Finding[]> {
     return findings
   }
 
-  const $     = cheerio.load(html)
+  const $ = cheerio.load(html)
   const forms: { action: string; method: string; inputs: string[]; hasToken: boolean }[] = []
 
   // Parse all forms
-  $('form').each((_, form) => {
+  $('form').each((_: any, form: any) => {
     const method  = ($(form).attr('method') ?? 'GET').toUpperCase()
     const action  = $(form).attr('action') ?? url
     const inputs: string[] = []
 
-    $(form).find('input[name], textarea[name], select[name]').each((_, el) => {
+    $(form).find('input[name], textarea[name], select[name]').each((_: any, el: any) => {
       const name = $(el).attr('name') ?? ''
       if (name) inputs.push(name)
     })

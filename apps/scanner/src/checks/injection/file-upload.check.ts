@@ -81,9 +81,9 @@ async function findUploadEndpoints(url: string): Promise<{ action: string; field
   try {
     const res  = await http.get(url, { timeout: 10000 })
     const html = String(res.data)
-    const $    = cheerio.load(html)
+    const $ = cheerio.load(html)
 
-    $('form').each((_, form) => {
+    $('form').each((_: any, form: any) => {
       const enctype = $(form).attr('enctype') ?? ''
       const action  = $(form).attr('action') ?? url
       const method  = ($(form).attr('method') ?? 'GET').toUpperCase()

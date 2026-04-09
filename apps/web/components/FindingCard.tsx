@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Finding } from '@/types/scan'
+import { Finding, Severity } from '@/types/scan'
 import SeverityBadge from './SeverityBadge'
 
 export default function FindingCard({ finding }: { finding: Finding }) {

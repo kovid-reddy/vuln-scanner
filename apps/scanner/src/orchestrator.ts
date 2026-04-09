@@ -1,59 +1,47 @@
-import { Finding, ScanResult }  from '@vuln-scanner/shared-types'
+import { Finding, ScanResult }     from '@vuln-scanner/shared-types'
 import { crawl, DiscoveredEndpoint } from './utils/crawler'
 
-// Checks
-import { corsCheck }        from './checks/broken-access-control/cors.check'
+// ── Checks ────────────────────────────────────────────────────────────────
+import { corsCheck }           from './checks/broken-access-control/cors.check'
 import { forcedBrowsingCheck } from './checks/broken-access-control/forced-browsing.check'
 import { httpMethodAbuseCheck } from './checks/broken-access-control/http-method-abuse.check'
-import { idorCheck }        from './checks/broken-access-control/idor.check'
-import { sqliCheck }        from './checks/injection/sqli.check'
-import { xssCheck }         from './checks/injection/xss.check'
-import { sstiCheck }        from './checks/injection/ssti.check'
-import { osCommandCheck }   from './checks/injection/os-command.check'
-import { cookieCheck }      from './checks/auth/cookie.check'
-import { jwtCheck }         from './checks/auth/jwt.check'
-import { csrfCheck }        from './checks/auth/csrf.check'
-import { ssrfCheck }        from './checks/auth/ssrf.check'
-import { fileUploadCheck } from './checks/injection/file-upload.check'
-import { xxeCheck }        from './checks/injection/xxe.check'
+import { idorCheck }           from './checks/broken-access-control/idor.check'
+import { sqliCheck }           from './checks/injection/sqli.check'
+import { xssCheck }            from './checks/injection/xss.check'
+import { sstiCheck }           from './checks/injection/ssti.check'
+import { osCommandCheck }      from './checks/injection/os-command.check'
+import { cookieCheck }         from './checks/auth/cookie.check'
+import { jwtCheck }            from './checks/auth/jwt.check'
+import { csrfCheck }           from './checks/auth/csrf.check'
+import { ssrfCheck }           from './checks/auth/ssrf.check'
+import { fileUploadCheck }     from './checks/injection/file-upload.check'
+import { xxeCheck }            from './checks/injection/xxe.check'
 
 const SEVERITY_WEIGHTS: Record<string, number> = {
   CRITICAL: 40, HIGH: 20, MEDIUM: 10, LOW: 5, INFO: 0,
 }
 
-// ── Check registry ──────────────────────────────────────────────────────────
+// ── Check registry ────────────────────────────────────────────────────────
 // type: 'site'     = runs once against the root URL
 // type: 'endpoint' = runs against every discovered endpoint
 export const CHECK_REGISTRY = [
   // Site-wide checks (run once)
-  { id: 'cors',              label: 'CORS misconfiguration',           category: 'broken-access-control', type: 'site',     fn: corsCheck            },
-  { id: 'forced-browsing',   label: 'Forced browsing',                 category: 'broken-access-control', type: 'site',     fn: forcedBrowsingCheck  },
-  { id: 'http-method-abuse', label: 'HTTP method abuse',               category: 'broken-access-control', type: 'site',     fn: httpMethodAbuseCheck },
-  { id: 'cookies',           label: 'Cookie & security headers',       category: 'auth',                  type: 'site',     fn: cookieCheck          },
-  { id: 'jwt',               label: 'JWT vulnerabilities',             category: 'auth',                  type: 'site',     fn: jwtCheck             },
-  { id: 'csrf',              label: 'CSRF protection',                 category: 'auth',                  type: 'site',     fn: csrfCheck            },
-  { id: 'ssrf',              label: 'SSRF detection',                  category: 'auth',                  type: 'site',     fn: ssrfCheck            },
+  { id: 'cors',              label: 'CORS misconfiguration',          category: 'broken-access-control', type: 'site',     fn: corsCheck            },
+  { id: 'forced-browsing',   label: 'Forced browsing',                category: 'broken-access-control', type: 'site',     fn: forcedBrowsingCheck  },
+  { id: 'http-method-abuse', label: 'HTTP method abuse',              category: 'broken-access-control', type: 'site',     fn: httpMethodAbuseCheck },
+  { id: 'cookies',           label: 'Cookie & security headers',      category: 'auth',                  type: 'site',     fn: cookieCheck          },
+  { id: 'jwt',               label: 'JWT vulnerabilities',            category: 'auth',                  type: 'site',     fn: jwtCheck             },
+  { id: 'csrf',              label: 'CSRF protection',                category: 'auth',                  type: 'site',     fn: csrfCheck            },
+  { id: 'ssrf',              label: 'SSRF detection',                 category: 'auth',                  type: 'site',     fn: ssrfCheck            },
 
   // Per-endpoint checks (run against every crawled URL)
-  { id: 'sqli',              label: 'SQL injection',                   category: 'injection',             type: 'endpoint', fn: sqliCheck            },
-  { id: 'xss',               label: 'Cross-site scripting (XSS)',      category: 'injection',             type: 'endpoint', fn: xssCheck             },
-  { id: 'ssti',              label: 'Server-side template injection',  category: 'injection',             type: 'endpoint', fn: sstiCheck            },
-  { id: 'os-command',        label: 'OS command injection',            category: 'injection',             type: 'endpoint', fn: osCommandCheck       },
-  { id: 'idor',              label: 'IDOR probing',                    category: 'broken-access-control', type: 'endpoint', fn: idorCheck            },
-  {
-    id:       'file-upload',
-    label:    'File upload vulnerability',
-    category: 'injection',
-    type:     'endpoint',
-    fn:       fileUploadCheck,
-  },
-  {
-    id:       'xxe',
-    label:    'XXE injection',
-    category: 'injection',
-    type:     'endpoint',
-    fn:       xxeCheck,
-  },
+  { id: 'sqli',              label: 'SQL injection',                  category: 'injection',             type: 'endpoint', fn: sqliCheck            },
+  { id: 'xss',               label: 'Cross-site scripting (XSS)',     category: 'injection',             type: 'endpoint', fn: xssCheck             },
+  { id: 'ssti',              label: 'Server-side template injection', category: 'injection',             type: 'endpoint', fn: sstiCheck            },
+  { id: 'os-command',        label: 'OS command injection',           category: 'injection',             type: 'endpoint', fn: osCommandCheck       },
+  { id: 'idor',              label: 'IDOR probing',                   category: 'broken-access-control', type: 'endpoint', fn: idorCheck            },
+  { id: 'file-upload',       label: 'File upload vulnerability',      category: 'injection',             type: 'endpoint', fn: fileUploadCheck      },
+  { id: 'xxe',               label: 'XXE injection',                  category: 'injection',             type: 'endpoint', fn: xxeCheck             },
 ] as const
 
 type CheckEntry = typeof CHECK_REGISTRY[number]
@@ -80,8 +68,11 @@ function shouldRun(check: CheckEntry, selected: string[]): boolean {
   return selected.includes(check.id) || selected.includes(check.category)
 }
 
-// Run a check against a single URL, never throw
-async function runCheck(fn: (url: string) => Promise<Finding[]>, url: string, label: string): Promise<Finding[]> {
+async function runCheck(
+  fn: (url: string) => Promise<Finding[]>,
+  url: string,
+  label: string,
+): Promise<Finding[]> {
   try {
     return await fn(url)
   } catch (err: any) {
@@ -115,8 +106,6 @@ export async function runScan(url: string, checks: string[] = ['all']): Promise<
   if (endpointChecks.length > 0) {
     const endpoints = await crawl(url, 40, 3)
 
-    // Run endpoint checks against all discovered endpoints in parallel
-    // Batch to avoid overwhelming the target — 5 endpoints at a time
     const BATCH_SIZE = 5
     const allEndpointResults: Finding[] = []
 
@@ -124,7 +113,7 @@ export async function runScan(url: string, checks: string[] = ['all']): Promise<
       const batch = endpoints.slice(i, i + BATCH_SIZE)
 
       const batchResults = await Promise.allSettled(
-        batch.flatMap(ep =>
+        batch.flatMap((ep: DiscoveredEndpoint) =>
           endpointChecks.map(c => runCheck(c.fn, ep.url, c.id))
         )
       )
@@ -136,15 +125,6 @@ export async function runScan(url: string, checks: string[] = ['all']): Promise<
 
     endpointFindings = allEndpointResults
   }
-  //  else {
-  //   // No endpoint checks selected — still run injection checks on the root URL
-  //   const rootResults = await Promise.allSettled(
-  //     endpointChecks.map(c => runCheck(c.fn, url, c.id))
-  //   )
-  //   endpointFindings = rootResults.flatMap(r =>
-  //     r.status === 'fulfilled' ? r.value : []
-  //   )
-  // }
 
   const allFindings = deduplicateFindings([...siteFindings, ...endpointFindings])
   const score       = calculateScore(allFindings)

@@ -1,7 +1,6 @@
 import { DiscoveredEndpoint } from './crawler'
 import { http } from './http'
 
-// Build GET test URLs by injecting payload into every param of an endpoint
 export function buildGetVariantsFromEndpoint(
   endpoint: DiscoveredEndpoint,
   payload:  string,
@@ -17,7 +16,6 @@ export function buildGetVariantsFromEndpoint(
       } catch { /* skip malformed URLs */ }
     }
   } else {
-    // No known params — try common injectable names
     for (const param of ['id', 'q', 'search', 'cat', 'page', 'user', 'item', 'query', 'name']) {
       try {
         const modified = new URL(endpoint.url)
@@ -30,7 +28,6 @@ export function buildGetVariantsFromEndpoint(
   return results
 }
 
-// Build POST body from endpoint params + payload
 export function buildPostBodyFromEndpoint(
   endpoint: DiscoveredEndpoint,
   payload:  string,
@@ -38,7 +35,6 @@ export function buildPostBodyFromEndpoint(
   const body: Record<string, string> = {}
   for (const param of endpoint.params) {
     const lower = param.toLowerCase()
-    // Don't inject into password fields — use realistic value
     body[param] = lower.includes('pass') ? 'TestPassword123!' : payload
   }
   return body

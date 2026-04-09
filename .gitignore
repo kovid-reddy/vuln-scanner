@@ -13,6 +13,9 @@ node_modules
 apps/api/.env
 apps/web/.env.local
 apps/web/.env.production
+# Allow .env.example files (templates without real secrets)
+!.env.example
+!**/.env.example
 
 # ── Build outputs ─────────────────────────────────────────────────────────────
 dist
@@ -20,14 +23,24 @@ build
 .next
 out
 
+# Safety net: prevent compiled tsc output from leaking into src/ directories
+# (this happens if tsc is accidentally run without outDir: "dist" configured)
+apps/scanner/src/**/*.js
+apps/scanner/src/**/*.js.map
+apps/scanner/src/**/*.d.ts
+!apps/scanner/src/cheerio.d.ts
+packages/shared-types/src/*.js
+packages/shared-types/src/*.js.map
+packages/shared-types/src/*.d.ts
+
 # ── TypeScript ────────────────────────────────────────────────────────────────
 *.tsbuildinfo
 *.d.ts.map
 
 # ── Prisma ────────────────────────────────────────────────────────────────────
-# Keep schema.prisma and migrations but ignore generated client
-# apps/api/node_modules/.prisma
-# prisma/migrations/migration_lock.toml
+# Keep schema.prisma and migrations — ignore only the generated client
+apps/api/node_modules/.prisma
+apps/api/prisma/migrations/migration_lock.toml
 
 # ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
@@ -35,7 +48,7 @@ npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-logs
+logs/
 .pnpm-debug.log*
 
 # ── OS files ──────────────────────────────────────────────────────────────────
@@ -52,6 +65,7 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/launch.json
 .idea
 *.swp
 *.swo
@@ -74,20 +88,20 @@ coverage
 .vercel
 
 # ── Docker ────────────────────────────────────────────────────────────────────
-# Don't ignore Dockerfiles — Railway needs them
+# Don't ignore Dockerfiles — Railway/Render needs them
 # DO ignore any local docker volumes or overrides
 docker-compose.override.yml
+docker-compose.local.yml
 .docker
 
 # ── Scanner specific ──────────────────────────────────────────────────────────
-# Ignore any captured scan results saved locally
 *.scan.json
 scan-results/
 
 # ── Misc ──────────────────────────────────────────────────────────────────────
 .cache
-tmp
-temp
+tmp/
+temp/
 .temp
 .tmp
 *.bak
