@@ -1,5 +1,6 @@
 import { http } from '../../utils/http'
 import { Finding } from '@vuln-scanner/shared-types'
+import { DiscoveredEndpoint } from '../../utils/crawler'
 
 const CAT = 'injection'
 
@@ -62,7 +63,8 @@ function containsSensitiveData(body: string): boolean {
   return SENSITIVE_KEYS.some(k => lower.includes(k))
 }
 
-// Build GET test URLs by injecting into each param
+// Build GET test URLs by injecting into actual query params only.
+// If the URL has no query parameters, returns an empty array.
 function buildGetUrls(originalUrl: string, payload: string): { url: string; param: string }[] {
   const parsed = new URL(originalUrl)
   const results: { url: string; param: string }[] = []
@@ -71,15 +73,6 @@ function buildGetUrls(originalUrl: string, payload: string): { url: string; para
     const modified = new URL(originalUrl)
     modified.searchParams.set(key, payload)
     results.push({ url: modified.toString(), param: key })
-  }
-
-  // No params — try common param names
-  if (results.length === 0) {
-    for (const param of ['id', 'q', 'search', 'query', 'cat', 'page', 'item', 'user']) {
-      const modified = new URL(originalUrl)
-      modified.searchParams.set(param, payload)
-      results.push({ url: modified.toString(), param })
-    }
   }
 
   return results
@@ -111,46 +104,56 @@ function buildPostBodies(payload: string): { body: Record<string, string>; field
   ]
 }
 
-export async function sqliCheck(url: string): Promise<Finding[]> {
+export async function sqliCheck(url: string, endpoint?: DiscoveredEndpoint): Promise<Finding[]> {
   const findings: Finding[] = []
   const reported = new Set<string>()
 
+  const parsedUrl = new URL(url)
+  const queryParams = [...parsedUrl.searchParams.keys()]
+  const hasParams = queryParams.length > 0
+  const isPostSupported = endpoint?.method === 'POST' || endpoint?.isForm === true
+  let requestCount = 0
+
   // ── 1. Error-based — GET params ──────────────────────────────────────────
-  outer:
-  for (const payload of ERROR_PAYLOADS) {
-    const targets = buildGetUrls(url, payload)
+  if (hasParams) {
+    outer:
+    for (const payload of ERROR_PAYLOADS) {
+      const targets = buildGetUrls(url, payload)
 
-    for (const { url: testUrl, param } of targets) {
-      if (reported.has(`error-get-${param}`)) continue
-      try {
-        const res = await http.get(testUrl, { timeout: 8000 })
-        const body = String(res.data)
-        const matched = containsSQLError(body)
+      for (const { url: testUrl, param } of targets) {
+        if (reported.has(`error-get-${param}`)) continue
+        requestCount++
+        try {
+          const res = await http.get(testUrl, { timeout: 8000 })
+          const body = String(res.data)
+          const matched = containsSQLError(body)
 
-        if (matched) {
-          reported.add(`error-get-${param}`)
-          findings.push({
-            category:    CAT,
-            checkName:   'sqli-error-based',
-            severity:    'CRITICAL',
-            title:       `SQL injection (error-based) — GET param "${param}"`,
-            description: 'The server returned a raw database error in response to a crafted SQL payload, confirming the parameter is injectable.',
-            evidence:    `URL: ${testUrl}\nPayload: ${payload}\nDB signature: "${matched}"\nSnippet: ${body.slice(0, 400)}`,
-            remediation: 'Use parameterized queries / prepared statements. Never concatenate user input into SQL. Apply a WAF as a secondary layer.',
-          })
-          break outer
-        }
-      } catch { /* skip */ }
+          if (matched) {
+            reported.add(`error-get-${param}`)
+            findings.push({
+              category:    CAT,
+              checkName:   'sqli-error-based',
+              severity:    'CRITICAL',
+              title:       `SQL injection (error-based) — GET param "${param}"`,
+              description: 'The server returned a raw database error in response to a crafted SQL payload, confirming the parameter is injectable.',
+              evidence:    `URL: ${testUrl}\nPayload: ${payload}\nDB signature: "${matched}"\nSnippet: ${body.slice(0, 400)}`,
+              remediation: 'Use parameterized queries / prepared statements. Never concatenate user input into SQL. Apply a WAF as a secondary layer.',
+            })
+            break outer
+          }
+        } catch { /* skip */ }
+      }
     }
   }
 
   // ── 2. Error-based — POST body ───────────────────────────────────────────
-  if (!reported.has('error-post')) {
+  if (isPostSupported && !reported.has('error-post')) {
     for (const payload of ERROR_PAYLOADS.slice(0, 6)) {
       const bodies = buildPostBodies(payload)
 
       for (const { body, fields } of bodies) {
         if (reported.has(`error-post-${fields}`)) continue
+        requestCount++
         try {
           const res = await http.post(url, body, {
             headers: { 'Content-Type': 'application/json' },
@@ -180,7 +183,7 @@ export async function sqliCheck(url: string): Promise<Finding[]> {
   }
 
   // ── 3. Boolean-blind — GET params ────────────────────────────────────────
-  if (findings.length === 0) {
+  if (hasParams && findings.length === 0) {
     for (const pair of BLIND_PAIRS) {
       const trueTargets  = buildGetUrls(url, pair.true)
       const falseTargets = buildGetUrls(url, pair.false)
@@ -188,6 +191,7 @@ export async function sqliCheck(url: string): Promise<Finding[]> {
       for (let i = 0; i < trueTargets.length; i++) {
         const { param } = trueTargets[i]
         if (reported.has(`blind-${param}`)) continue
+        requestCount += 2
 
         try {
           const [trueRes, falseRes] = await Promise.all([
@@ -242,12 +246,13 @@ export async function sqliCheck(url: string): Promise<Finding[]> {
   }
 
   // ── 4. Time-based blind ──────────────────────────────────────────────────
-  if (findings.length === 0) {
+  if (hasParams && findings.length === 0) {
     for (const payload of TIME_PAYLOADS) {
       const targets = buildGetUrls(url, payload)
 
       for (const { url: testUrl, param } of targets) {
         if (reported.has(`time-${param}`)) continue
+        requestCount++
         try {
           const start   = Date.now()
           await http.get(testUrl, { timeout: 12000 })
@@ -272,6 +277,8 @@ export async function sqliCheck(url: string): Promise<Finding[]> {
       if (findings.length > 0) break
     }
   }
+
+  console.log(`[sqli] Tested ${url} | GET params: ${hasParams ? queryParams.join(',') : 'none'} | POST: ${isPostSupported ? 'yes' : 'skipped'} | requests sent: ${requestCount}`)
 
   return findings
 }

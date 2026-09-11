@@ -69,12 +69,13 @@ function shouldRun(check: CheckEntry, selected: string[]): boolean {
 }
 
 async function runCheck(
-  fn: (url: string) => Promise<Finding[]>,
+  fn: (url: string, endpoint?: DiscoveredEndpoint) => Promise<Finding[]>,
   url: string,
   label: string,
+  endpoint?: DiscoveredEndpoint,
 ): Promise<Finding[]> {
   try {
-    return await fn(url)
+    return await fn(url, endpoint)
   } catch (err: any) {
     console.error(`[orchestrator] Check "${label}" failed on ${url}:`, err.message)
     return []
@@ -114,7 +115,7 @@ export async function runScan(url: string, checks: string[] = ['all']): Promise<
 
       const batchResults = await Promise.allSettled(
         batch.flatMap((ep: DiscoveredEndpoint) =>
-          endpointChecks.map(c => runCheck(c.fn, ep.url, c.id))
+          endpointChecks.map(c => runCheck(c.fn, ep.url, c.id, ep))
         )
       )
 
