@@ -38,9 +38,8 @@ packages/shared-types/src/*.d.ts
 *.d.ts.map
 
 # ── Prisma ────────────────────────────────────────────────────────────────────
-# Keep schema.prisma and migrations — ignore only the generated client
+# Keep schema.prisma, migrations, AND migration_lock.toml — ignore only the generated client
 apps/api/node_modules/.prisma
-apps/api/prisma/migrations/migration_lock.toml
 
 # ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
@@ -106,3 +105,8 @@ temp/
 .tmp
 *.bak
 *.backup
+
+# ── Secret / credential files ─────────────────────────────────────────────────
+# Prevent accidental commit of any local secrets file
+redis_url.txt
+*.secret.txt

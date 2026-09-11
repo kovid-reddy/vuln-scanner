@@ -1,5 +1,11 @@
 node_modules
-# Keep environment variables out of version control
-.env
+dist
 
+# Environment files — never commit real credentials
+.env
+.env.production
+.env.staging
+.env.test
+
+# Prisma generated client (regenerated at build time)
 /generated/prisma

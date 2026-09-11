@@ -7,7 +7,7 @@ import './queue/scan.worker'   // start BullMQ worker in the same process
 const app = Fastify({ logger: { level: 'info' } })
 
 app.register(cors, {
-  origin: (origin, callback) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true)
     // Allow any localhost port (development)
